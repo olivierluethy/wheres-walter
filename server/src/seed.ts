@@ -3,22 +3,29 @@ import { deriveWalterPosition, type MapSettings } from '@walter/shared';
 import { db } from './db.js';
 
 const DEMO_ID = 'demo';
-const settings: MapSettings = { seed: 'walter-demo-2024', theme: 'winter', mapSize: 'medium', difficulty: 'normal' };
+const settings: MapSettings = {
+  seed: 'walter-demo-2024',
+  theme: 'winter',
+  mapSize: 'medium',
+  difficulty: 'normal',
+  decoyTrickiness: 0.5,
+};
 
 // Place the demo Walter at the deterministic solo position for this seed so the
-// scene is genuinely solvable.
+// scene is genuinely solvable (regenerated with the redesigned engine).
 const walter = deriveWalterPosition(settings);
 
 db.prepare('DELETE FROM challenges WHERE id = ?').run(DEMO_ID);
 db.prepare(
-  `INSERT INTO challenges (id, seed, theme, mapSize, difficulty, walterX, walterY, creatorName, title, createdAt)
-   VALUES (@id, @seed, @theme, @mapSize, @difficulty, @walterX, @walterY, @creatorName, @title, @createdAt)`
+  `INSERT INTO challenges (id, seed, theme, mapSize, difficulty, decoyTrickiness, walterX, walterY, creatorName, title, createdAt)
+   VALUES (@id, @seed, @theme, @mapSize, @difficulty, @decoyTrickiness, @walterX, @walterY, @creatorName, @title, @createdAt)`
 ).run({
   id: DEMO_ID,
   seed: settings.seed,
   theme: settings.theme,
   mapSize: settings.mapSize,
   difficulty: settings.difficulty,
+  decoyTrickiness: settings.decoyTrickiness ?? 0.5,
   walterX: walter.x,
   walterY: walter.y,
   creatorName: 'The Walter Team',

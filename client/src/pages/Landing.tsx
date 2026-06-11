@@ -24,7 +24,7 @@ export function Landing() {
             Where's Walter?
           </h1>
           <p className="mt-3 max-w-md text-balance text-slate-400">
-            Green beanie, orange-striped scarf, yellow jacket, brown round glasses. He's hiding in the crowd — can you spot him?
+            Yellow-and-blue striped sweater, green pompom beanie, brown round glasses — and he's the only one waving. He's hiding in the crowd, can you spot him?
           </p>
 
           <div className="mt-8 flex w-full max-w-sm flex-col gap-3">

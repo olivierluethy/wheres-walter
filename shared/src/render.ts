@@ -1,11 +1,12 @@
 import { Rng } from './rng.js';
 import { WALTER_PARTS } from './palette.js';
-import type { CharacterParts, Scene, Theme, WalterInstance } from './types.js';
+import { THEME_BG, GROUND_FRACTION } from './background.js';
+import type { CharacterParts, Pose, Scene, Theme, TopStyle, WalterInstance } from './types.js';
 
 // ---------------------------------------------------------------------------
-// Original procedural SVG artwork. Everything here is drawn from primitive
-// shapes — no copied or licensed imagery. A character is drawn centered on the
-// origin; the scene renderer wraps each in a translate/scale group.
+// Original procedural SVG artwork. Everything is drawn from primitive shapes —
+// no copied or licensed imagery. A character is drawn centered on the origin;
+// the scene renderer wraps each in a translate/scale group.
 // ---------------------------------------------------------------------------
 
 function esc(n: number): string {
@@ -41,17 +42,15 @@ function hat(parts: CharacterParts): string {
   }
 }
 
-function scarf(parts: CharacterParts): string {
-  if (!parts.scarf) return '';
-  const base = `<rect x="-11" y="-13" width="22" height="7" rx="3" fill="${parts.scarfColor}"/>`;
-  const tail = `<rect x="4" y="-8" width="5" height="12" rx="2" fill="${parts.scarfColor}"/>`;
-  if (!parts.scarfStriped) return base + tail;
-  // Diagonal stripes in the secondary color.
-  const stripes = [-9, -5, -1, 3, 7]
-    .map((sx) => `<rect x="${sx}" y="-13" width="2" height="7" fill="${parts.scarfColor2}"/>`)
+/** Torso: a solid or horizontally striped sweater (5–6 visible bands). */
+function torso(top: TopStyle): string {
+  const base = `<rect x="-11" y="-12" width="22" height="24" rx="6" fill="${top.colorA}"/>`;
+  if (!top.striped) return base;
+  // Alternating bands of colorB over the colorA base → 6 visible bands.
+  const bands = [-8, 0, 8]
+    .map((y) => `<rect x="-10.5" y="${y}" width="21" height="4" fill="${top.colorB}"/>`)
     .join('');
-  const tailStripe = `<rect x="4" y="-3" width="5" height="2" fill="${parts.scarfColor2}"/><rect x="4" y="1" width="5" height="2" fill="${parts.scarfColor2}"/>`;
-  return base + stripes + tail + tailStripe;
+  return base + bands;
 }
 
 function glasses(parts: CharacterParts): string {
@@ -64,18 +63,59 @@ function glasses(parts: CharacterParts): string {
   );
 }
 
+/** Legs + shoes, varying by pose. Sitting/crouching draw a lower, bent stance. */
+function legs(parts: CharacterParts, pose: Pose): string {
+  const shoeColor = parts.shoes;
+  const shoe = (x: number, y: number) => `<rect x="${esc(x)}" y="${esc(y)}" width="8" height="4" rx="2" fill="${shoeColor}"/>`;
+  const leg = (x: number, y: number, h: number) => `<rect x="${esc(x)}" y="${esc(y)}" width="6.5" height="${esc(h)}" rx="2.5" fill="${parts.pants}"/>`;
+  switch (pose) {
+    case 'walking':
+      return leg(-9, 8, 28) + leg(3, 8, 26) + shoe(-11, 34) + shoe(3, 32);
+    case 'sitting':
+      // Thighs forward, shins down — a compact seated silhouette.
+      return (
+        `<rect x="-9" y="8" width="18" height="6" rx="3" fill="${parts.pants}"/>` +
+        leg(-9, 12, 18) + leg(3, 12, 18) + shoe(-10, 28) + shoe(2, 28)
+      );
+    case 'crouching':
+      return leg(-9, 14, 16) + leg(2.5, 14, 16) + shoe(-11, 28) + shoe(2, 28);
+    case 'standing':
+    case 'waving':
+    default:
+      return leg(-8, 8, 28) + leg(1.5, 8, 28) + shoe(-9, 34) + shoe(1, 34);
+  }
+}
+
+/** Arms, varying by pose. Only `waving` raises an arm above the shoulder. */
+function arms(parts: CharacterParts, pose: Pose): string {
+  const sleeve = parts.top.colorA;
+  const hand = (x: number, y: number) => `<circle cx="${esc(x)}" cy="${esc(y)}" r="2.4" fill="${parts.skin}"/>`;
+  const armDown = (x: number) => `<rect x="${esc(x)}" y="-10" width="5" height="20" rx="2.5" fill="${sleeve}"/>`;
+  switch (pose) {
+    case 'waving': {
+      // Left arm down; right arm raised high → unique tall silhouette.
+      const left = armDown(-13.5) + hand(-11, 11);
+      const raised = `<path d="M 9 -8 L 15 -34 L 19 -33 L 13 -7 Z" fill="${sleeve}"/>`;
+      return left + raised + hand(17, -35);
+    }
+    case 'walking':
+      return armDown(-13) + armDown(8.5) + hand(-10.5, 11) + hand(11, 11);
+    case 'crouching':
+      return (
+        `<rect x="-13" y="-8" width="5" height="16" rx="2.5" fill="${sleeve}"/>` +
+        `<rect x="8" y="-8" width="5" height="16" rx="2.5" fill="${sleeve}"/>` +
+        hand(-10.5, 9) + hand(10.5, 9)
+      );
+    case 'sitting':
+    case 'standing':
+    default:
+      return armDown(-13.5) + armDown(8.5) + hand(-11, 11) + hand(11, 11);
+  }
+}
+
 /** Build the inner SVG for one character (centered at origin). */
 export function characterSvg(parts: CharacterParts): string {
   const shadow = `<ellipse cx="0" cy="38" rx="13" ry="3.4" fill="rgba(2,6,23,0.28)"/>`;
-  const legL = `<rect x="-8" y="8" width="6.5" height="28" rx="2.5" fill="${parts.pants}"/>`;
-  const legR = `<rect x="1.5" y="8" width="6.5" height="28" rx="2.5" fill="${parts.pants}"/>`;
-  const shoeL = `<rect x="-9" y="34" width="8" height="4" rx="2" fill="#0f172a"/>`;
-  const shoeR = `<rect x="1" y="34" width="8" height="4" rx="2" fill="#0f172a"/>`;
-  const body = `<rect x="-11" y="-12" width="22" height="24" rx="6" fill="${parts.jacket}"/>`;
-  const armL = `<rect x="-13.5" y="-10" width="5" height="20" rx="2.5" fill="${parts.jacket}"/>`;
-  const armR = `<rect x="8.5" y="-10" width="5" height="20" rx="2.5" fill="${parts.jacket}"/>`;
-  const handL = `<circle cx="-11" cy="11" r="2.4" fill="${parts.skin}"/>`;
-  const handR = `<circle cx="11" cy="11" r="2.4" fill="${parts.skin}"/>`;
   const hairBack = parts.hat === 'none'
     ? `<circle cx="0" cy="-23" r="10" fill="${parts.hair}"/>`
     : `<circle cx="0" cy="-22" r="9.6" fill="${parts.hair}"/>`;
@@ -83,13 +123,11 @@ export function characterSvg(parts: CharacterParts): string {
 
   return (
     shadow +
-    legL + legR + shoeL + shoeR +
-    armL + armR +
-    body +
-    handL + handR +
+    legs(parts, parts.pose) +
+    arms(parts, parts.pose) +
+    torso(parts.top) +
     hairBack +
     head +
-    scarf(parts) +
     glasses(parts) +
     hat(parts)
   );
@@ -98,12 +136,6 @@ export function characterSvg(parts: CharacterParts): string {
 // ---------------------------------------------------------------------------
 // Backgrounds
 // ---------------------------------------------------------------------------
-
-const THEME_BG: Record<Theme, { top: string; bottom: string; ground: string }> = {
-  beach: { top: '#38bdf8', bottom: '#7dd3fc', ground: '#fcd9a0' },
-  city: { top: '#475569', bottom: '#64748b', ground: '#94a3b8' },
-  winter: { top: '#1e3a5f', bottom: '#475e7a', ground: '#e2e8f0' },
-};
 
 function themeProp(theme: Theme, x: number, groundY: number, rng: Rng): string {
   switch (theme) {
@@ -130,7 +162,8 @@ function themeProp(theme: Theme, x: number, groundY: number, rng: Rng): string {
 /**
  * Render the full inner SVG for a scene: defs, themed background and the crowd.
  * Optionally renders Walter instances on top (solo mode + multiplayer; see
- * README for why a visual find-game must draw its targets client-side).
+ * README for why a visual find-game must draw its targets client-side). Walter
+ * is always drawn last so he can never be more than minimally occluded (§3.5).
  */
 export function renderSceneSVG(scene: Scene, walters: WalterInstance[] = []): string {
   const { width, height } = scene;
@@ -138,7 +171,7 @@ export function renderSceneSVG(scene: Scene, walters: WalterInstance[] = []): st
   const bg = THEME_BG[theme];
   const rng = new Rng(`${scene.settings.seed}|bg|${theme}`);
 
-  const groundY = height * 0.82;
+  const groundY = height * GROUND_FRACTION;
 
   const defs = `<defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">

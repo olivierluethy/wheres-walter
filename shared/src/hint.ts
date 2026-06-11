@@ -1,7 +1,7 @@
 import { Rng } from './rng.js';
 import { distance } from './geometry.js';
 import type { HintCircle, MapSize, WalterInstance } from './types.js';
-import { MAP_DIMENSIONS } from './palette.js';
+import { MAP_DIMENSIONS } from './dimensions.js';
 
 /** Hint radius as a fraction of the map's shorter dimension, by level. */
 export const HINT_RADIUS_FRACTION: Record<number, number> = {

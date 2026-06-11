@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   generateScene,
+  isLowContrastForWalter,
   randomSeed,
   walterScale,
   type MapSettings,
@@ -24,6 +25,12 @@ const SIZE_OPTIONS: { value: MapSize; label: string }[] = [
   { value: 'large', label: 'Large' },
 ];
 
+const TRICKINESS_OPTIONS: { value: number; label: string }[] = [
+  { value: 0.25, label: 'Easy' },
+  { value: 0.5, label: 'Normal' },
+  { value: 0.8, label: 'Tricky' },
+];
+
 export function CreateChallenge() {
   const navigate = useNavigate();
   const [stage, setStage] = useState<'form' | 'place' | 'done'>('form');
@@ -31,6 +38,7 @@ export function CreateChallenge() {
   const [title, setTitle] = useState('');
   const [theme, setTheme] = useState<Theme>('winter');
   const [mapSize, setMapSize] = useState<MapSize>('medium');
+  const [trickiness, setTrickiness] = useState(0.5);
   const [seed, setSeed] = useState(randomSeed());
   const [walter, setWalter] = useState<{ x: number; y: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -38,10 +46,14 @@ export function CreateChallenge() {
   const [share, setShare] = useState<{ id: string; shareUrl: string; resultsUrl: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const settings: MapSettings = useMemo(() => ({ seed, theme, mapSize, difficulty: 'normal' }), [seed, theme, mapSize]);
+  const settings: MapSettings = useMemo(
+    () => ({ seed, theme, mapSize, difficulty: 'normal', decoyTrickiness: trickiness }),
+    [seed, theme, mapSize, trickiness]
+  );
   const scene = useMemo(() => generateScene(settings), [settings]);
 
   const walterInstance = walter ? { id: 0, x: walter.x, y: walter.y, scale: walterScale(walter.y, mapSize) } : null;
+  const lowContrast = walter ? isLowContrastForWalter(settings, walter.x, walter.y) : false;
 
   const startPlacing = () => {
     if (!creatorName.trim() || !title.trim()) {
@@ -63,6 +75,7 @@ export function CreateChallenge() {
         theme,
         mapSize,
         difficulty: 'normal',
+        decoyTrickiness: trickiness,
         walterX: walter.x,
         walterY: walter.y,
         creatorName: creatorName.trim(),
@@ -133,6 +146,20 @@ export function CreateChallenge() {
               ))}
             </div>
           </div>
+          <div>
+            <label className="label">Difficulty <span className="font-normal text-slate-600">(how many look-alikes cluster near Walter)</span></label>
+            <div className="grid grid-cols-3 gap-2">
+              {TRICKINESS_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => setTrickiness(o.value)}
+                  className={`rounded-xl border px-2 py-3 text-sm font-medium transition-colors ${trickiness === o.value ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600'}`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {error && <p className="text-sm text-rose-400">{error}</p>}
           <button onClick={startPlacing} className="btn-primary w-full">Design map & place Walter →</button>
@@ -157,6 +184,11 @@ export function CreateChallenge() {
           </button>
         </header>
         {error && <div className="bg-rose-500/15 px-4 py-1.5 text-center text-sm text-rose-300">{error}</div>}
+        {lowContrast && (
+          <div className="bg-amber-400/10 px-4 py-1.5 text-center text-sm text-amber-300">
+            ⚠️ Low contrast here — Walter's stripes may be hard to see against the background. You can still place him here.
+          </div>
+        )}
         <div className="flex-1 p-3">
           <SceneViewer
             scene={scene}

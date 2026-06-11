@@ -39,7 +39,16 @@ export function PlayChallenge() {
   }, [id]);
 
   const settings: MapSettings | null = useMemo(
-    () => (challenge ? { seed: challenge.seed, theme: challenge.theme, mapSize: challenge.mapSize, difficulty: challenge.difficulty } : null),
+    () =>
+      challenge
+        ? {
+            seed: challenge.seed,
+            theme: challenge.theme,
+            mapSize: challenge.mapSize,
+            difficulty: challenge.difficulty,
+            decoyTrickiness: challenge.decoyTrickiness,
+          }
+        : null,
     [challenge]
   );
   const scene = useMemo(() => (settings ? generateScene(settings) : null), [settings]);

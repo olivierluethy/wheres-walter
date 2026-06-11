@@ -19,26 +19,42 @@ export interface MapSettings {
   theme: Theme;
   mapSize: MapSize;
   difficulty: Difficulty;
+  /**
+   * 0–1, default 0.5. Scales the density of one-attribute near-misses placed
+   * near Walter. Never loosens the absolute decoy invariants.
+   */
+  decoyTrickiness?: number;
 }
 
+export const DEFAULT_TRICKINESS = 0.5;
+
 export type HatType = 'none' | 'beanie' | 'cap' | 'sunhat' | 'tophat';
+
+/** Body pose. Only Walter is ever `waving` (a raised arm) — see decoy rules. */
+export type Pose = 'standing' | 'walking' | 'sitting' | 'crouching' | 'waving';
+
+/** A character's sweater/top. Striped tops render horizontal bands of A/B. */
+export interface TopStyle {
+  striped: boolean;
+  colorA: string;
+  /** Secondary stripe color; equals colorA for solid tops. */
+  colorB: string;
+}
 
 /** The visible attributes that make up a single character. */
 export interface CharacterParts {
   skin: string;
   hair: string;
-  jacket: string;
   pants: string;
+  shoes: string;
+  top: TopStyle;
   hat: HatType;
   hatColor: string;
   /** Pom-pom on the beanie (Walter has one). */
   hatPom: boolean;
-  scarf: boolean;
-  scarfStriped: boolean;
-  scarfColor: string;
-  scarfColor2: string;
   glasses: boolean;
   glassesColor: string;
+  pose: Pose;
 }
 
 /** A placed character in scene coordinates. */
@@ -96,6 +112,7 @@ export interface ChallengePublic {
   theme: Theme;
   mapSize: MapSize;
   difficulty: Difficulty;
+  decoyTrickiness: number;
   creatorName: string;
   title: string;
   createdAt: number;
@@ -107,6 +124,7 @@ export interface CreateChallengeRequest {
   theme: Theme;
   mapSize: MapSize;
   difficulty: Difficulty;
+  decoyTrickiness: number;
   walterX: number;
   walterY: number;
   creatorName: string;

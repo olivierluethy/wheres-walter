@@ -12,16 +12,17 @@ db.pragma('journal_mode = WAL');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS challenges (
-    id          TEXT PRIMARY KEY,
-    seed        TEXT NOT NULL,
-    theme       TEXT NOT NULL,
-    mapSize     TEXT NOT NULL,
-    difficulty  TEXT NOT NULL,
-    walterX     REAL NOT NULL,
-    walterY     REAL NOT NULL,
-    creatorName TEXT NOT NULL,
-    title       TEXT NOT NULL,
-    createdAt   INTEGER NOT NULL
+    id              TEXT PRIMARY KEY,
+    seed            TEXT NOT NULL,
+    theme           TEXT NOT NULL,
+    mapSize         TEXT NOT NULL,
+    difficulty      TEXT NOT NULL,
+    decoyTrickiness REAL NOT NULL DEFAULT 0.5,
+    walterX         REAL NOT NULL,
+    walterY         REAL NOT NULL,
+    creatorName     TEXT NOT NULL,
+    title           TEXT NOT NULL,
+    createdAt       INTEGER NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS results (
@@ -39,12 +40,20 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_results_challenge ON results(challengeId);
 `);
 
+// Migration: add decoyTrickiness to challenge tables created before the Walter
+// redesign (CREATE TABLE IF NOT EXISTS won't alter an existing table).
+const challengeCols = (db.prepare('PRAGMA table_info(challenges)').all() as Array<{ name: string }>).map((c) => c.name);
+if (!challengeCols.includes('decoyTrickiness')) {
+  db.exec('ALTER TABLE challenges ADD COLUMN decoyTrickiness REAL NOT NULL DEFAULT 0.5');
+}
+
 export interface ChallengeRow {
   id: string;
   seed: string;
   theme: string;
   mapSize: string;
   difficulty: string;
+  decoyTrickiness: number;
   walterX: number;
   walterY: number;
   creatorName: string;

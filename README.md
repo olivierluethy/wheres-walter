@@ -1,14 +1,38 @@
 # Where's Walter? 🟢🧣
 
-A procedurally generated **hidden-object game**. Find **Walter** — green beanie (with
-a white pom), orange-and-white striped scarf, yellow jacket, and brown round glasses —
-hidden in a crowd of hundreds. Play solo on an endless supply of fresh maps, create and
-share challenges with a custom hiding spot, or race friends in real-time multiplayer.
+A procedurally generated **hidden-object game**. Find **Walter** — a yellow-and-blue
+striped sweater, a green pompom beanie, brown round glasses, charcoal trousers and white
+sneakers, **mid-wave** — hidden in a crowd of hundreds. Play solo on an endless supply of
+fresh maps, create and share challenges with a custom hiding spot, or race friends in
+real-time multiplayer.
 
-> **Walter is an original character.** He deliberately does **not** wear the trademarked
-> red-and-white striped shirt, red bobble hat, and round glasses of "Waldo/Wally". All
-> scene artwork is original, procedurally generated SVG built from primitive shapes — no
-> copied or licensed imagery anywhere.
+> **Walter is an original character.** He deliberately does **not** reproduce the
+> "Waldo/Wally" design (red-and-white striped shirt, red bobble hat, black round glasses,
+> blue jeans, brown boots, cane, satchel). He uses the genre's conventions — a striped top,
+> a hat, glasses, a friendly wave — but with a clearly different palette and combination.
+> All scene artwork is original, procedurally generated SVG built from primitive shapes —
+> no copied or licensed imagery anywhere.
+
+### Walter's design (and why he's findable)
+
+Walter was redesigned so players can spot him without burning hints. His distinguishing
+features:
+
+| Attribute | Value |
+| --- | --- |
+| Sweater | bold horizontal stripes, **yellow `#FACC15` + royal blue `#2563EB`** (6 bands) |
+| Hat | **green `#16A34A` beanie** with a white pompom |
+| Glasses | round, **brown `#78350F`** frames |
+| Trousers / shoes | charcoal `#1F2937` / **white sneakers** |
+| Pose | **one arm raised, waving — he is the only waving character in the scene** |
+| Size | rendered at **1.15× the average decoy scale** (a distinctly larger silhouette) |
+
+The raised arm gives Walter a unique silhouette that reads even at low zoom, and his
+high-contrast stripes pop against every theme. When Walter is auto-placed (solo &
+multiplayer) the engine samples the background under him and, if his stripes wouldn't
+contrast enough, deterministically nudges him to the nearest spot that passes. In the
+challenge creator the placement is the creator's choice, so a low-contrast spot only shows
+a subtle warning.
 
 ---
 
@@ -70,15 +94,40 @@ The same settings always produce a pixel-identical crowd on the client and the s
    (lower = larger), and sorted back-to-front (painter's algorithm) for natural overlap.
    The RNG stream is seeded from the full settings.
 2. **Decoys & near-misses** (`makeDecoy`): each decoy is assembled from a parts system
-   (skin, hair, jacket, pants, hat, scarf, glasses) with theme-specific palettes. A tunable
-   fraction are **deliberate near-misses** — they start as a Walter and break 1–3 of his
-   distinguishing traits (green beanie but no scarf; orange scarf but a blue jacket; etc.).
-   A hard guarantee ensures **no decoy is ever a full Walter**.
+   (skin, hair, top, trousers, shoes, hat, glasses, **pose**) with theme-specific palettes.
+   The factory constructs every decoy to provably satisfy the **exclusivity invariants**
+   below, granting *at most one* of Walter's signature attributes explicitly and forcing
+   every other signature-bearing field to a non-matching value. **Decoy exclusivity rules
+   (absolute at every theme/size/seed/difficulty):**
+   - **§3.1** No decoy ever has a raised/waving arm (poses: standing, walking, sitting,
+     crouching only).
+   - **§3.2** No decoy wears the yellow+blue stripe combo; striped decoys use other pairs
+     (red/white, green/white, …) and **≤ 8%** of decoys wear stripes at all.
+   - **§3.3** No decoy shares **more than one** of Walter's four signature attributes
+     (yellow/blue striped sweater, green pompom beanie, brown round glasses, white sneakers).
+   - **§3.4** No decoy renders at Walter's 1.15× scale — decoy scale is bounded to 0.9×–1.05×.
+   - **§3.5** Walter is drawn last, so he can never be meaningfully occluded by props or
+     other characters.
+
+   These are enforced by construction (not rejection sampling) and verified by an invariant
+   test over 50 randomized scenes. The single source of truth for "does this character share
+   a signature attribute" is `sharedAttributeCount()` in `palette.ts`, used by both the
+   generator and the tests.
+
+   A **`decoyTrickiness`** setting (0–1, default 0.5) scales how many *one-attribute*
+   near-misses cluster within a 20%-radius neighborhood of Walter — more near-misses near
+   him makes the hunt harder. It **never** loosens the invariants above. Solo and multiplayer
+   use 0.5; the challenge creator exposes Easy / Normal / Tricky → 0.25 / 0.5 / 0.8. (Because
+   the crowd must stay seed-deterministic, near-misses cluster around the *seed-derived*
+   Walter anchor; in a challenge with a custom placement that anchor may differ from the
+   creator's exact spot.)
 3. **Walter placement**: solo derives Walter's position from a *separate* seeded RNG
    stream (`deriveWalterPosition`); multiplayer places N Walters with enforced minimum
    spacing (`deriveWalterPositions`); challenges use the creator's chosen coordinates.
-   Walter's render scale is a pure function of his `y` (`walterScale`) so client rendering
-   and server hit-detection always agree.
+   Auto-placed Walters are nudged off any low-contrast spot via a deterministic ring search
+   (`nudgeForContrast`, using the WCAG `contrastRatio` of his stripes vs `backgroundColorAt`).
+   Walter's render scale is the constant `WALTER_SCALE` (1.15× the average decoy) so client
+   rendering and server hit-detection always agree and he stays larger than every decoy.
 4. **Hit detection** (`hitBoxFor` / `isHit`): a click is a hit if it lands within a radius
    of `CHAR_HALF_H * scale + 8px` padding around Walter — works in **scene coordinates**
    at any zoom level (the viewer converts screen → scene coords).
@@ -90,9 +139,13 @@ The same settings always produce a pixel-identical crowd on the client and the s
    ★★★ `< 45s`, ★★ `< 120s`, ★ otherwise.
 
 The engine is covered by unit tests (`shared/test/engine.test.ts`): seed determinism
-(same seed → byte-identical character list), crowd-size bounds, "no decoy is a full
-Walter", hit detection, multi-Walter spacing, the hint invariants (inside + never
-centered, across 200 randomized trials and all three levels), and star thresholds.
+(same settings → byte-identical character list; trickiness is part of the deterministic
+input), crowd-size bounds, the **decoy exclusivity invariants over 50 randomized scenes**
+(§3.1–§3.4), Walter's design (4 signature attributes, waving, larger than any decoy),
+trickiness tuning (more near-misses near Walter without breaking invariants), the contrast
+placement guarantee (auto-placed Walters never left low-contrast), hit detection,
+multi-Walter spacing, the hint invariants (inside + never centered, across 200 randomized
+trials and all three levels), and star thresholds.
 
 ---
 
@@ -176,8 +229,14 @@ requirement as far as is meaningful:
 
 ## Conventions chosen where the spec was silent
 
-- **Difficulty** (`easy`/`normal`/`hard`) tunes crowd density and near-miss frequency; solo
-  and challenges default to `normal`.
+- **Difficulty** (`easy`/`normal`/`hard`) tunes crowd *density*; near-miss frequency is
+  driven separately by **`decoyTrickiness`** (the challenge creator's Easy/Normal/Tricky).
+  Solo and challenges default to `normal`.
+- **Demo / existing challenges:** the seeded demo (`/c/demo`) is regenerated by `npm run seed`
+  with the redesigned engine. Challenge links created **before** the redesign still work — the
+  stored seed and Walter coordinates are unchanged, so they render the **new** Walter design
+  at the **same coordinates** (the DB gains a `decoyTrickiness` column defaulting to 0.5 via
+  an automatic migration).
 - **Themes:** beach, city plaza, winter market (each with its own palette and background props).
 - **Map sizes:** small/medium/large/**xl**; multiplayer is restricted to large/xl per spec.
 - **Best-times** ranking uses *effective* time (with penalties). Player name is remembered

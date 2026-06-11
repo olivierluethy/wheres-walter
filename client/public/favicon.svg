@@ -1,15 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#020617"/>
-  <g transform="translate(32,40) scale(1.15)">
-    <circle cx="0" cy="-8" r="11" fill="#e8b98c"/>
-    <path d="M -12 -10 Q 0 -30 12 -10 Z" fill="#16a34a"/>
-    <rect x="-12.5" y="-13" width="25" height="6" rx="3" fill="#16a34a"/>
-    <circle cx="0" cy="-26" r="3" fill="#f8fafc"/>
-    <rect x="-12" y="2" width="24" height="10" rx="3" fill="#f97316"/>
-    <rect x="-9" y="2" width="2" height="10" fill="#f8fafc"/>
-    <rect x="-3" y="2" width="2" height="10" fill="#f8fafc"/>
-    <rect x="3" y="2" width="2" height="10" fill="#f8fafc"/>
-    <circle cx="-3.6" cy="-8" r="3" fill="none" stroke="#78350f" stroke-width="1.2"/>
-    <circle cx="3.6" cy="-8" r="3" fill="none" stroke="#78350f" stroke-width="1.2"/>
+  <g transform="translate(32,42) scale(1.2)">
+    <!-- raised waving arm -->
+    <path d="M 9 -8 L 15 -34 L 19 -33 L 13 -7 Z" fill="#facc15"/>
+    <circle cx="17" cy="-35" r="2.6" fill="#e8b98c"/>
+    <!-- striped sweater -->
+    <rect x="-11" y="-12" width="22" height="24" rx="6" fill="#facc15"/>
+    <rect x="-10.5" y="-8" width="21" height="4" fill="#2563eb"/>
+    <rect x="-10.5" y="0" width="21" height="4" fill="#2563eb"/>
+    <rect x="-10.5" y="8" width="21" height="4" fill="#2563eb"/>
+    <!-- head + green beanie -->
+    <circle cx="0" cy="-22" r="8.4" fill="#e8b98c"/>
+    <path d="M -11 -27 Q 0 -42 11 -27 Z" fill="#16a34a"/>
+    <rect x="-11.5" y="-29" width="23" height="6" rx="3" fill="#16a34a"/>
+    <circle cx="0" cy="-40" r="3" fill="#f8fafc"/>
+    <!-- brown round glasses -->
+    <circle cx="-3.4" cy="-22" r="2.7" fill="none" stroke="#78350f" stroke-width="1"/>
+    <circle cx="3.4" cy="-22" r="2.7" fill="none" stroke="#78350f" stroke-width="1"/>
   </g>
 </svg>

@@ -21,7 +21,7 @@ import { recordBestTime } from '../lib/storage';
 
 function freshSettings(): MapSettings {
   const theme = THEMES[Math.floor(Math.random() * THEMES.length)] as Theme;
-  return { seed: randomSeed(), theme, mapSize: 'medium', difficulty: 'normal' };
+  return { seed: randomSeed(), theme, mapSize: 'medium', difficulty: 'normal', decoyTrickiness: 0.5 };
 }
 
 export function SoloGame() {

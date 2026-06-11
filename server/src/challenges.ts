@@ -57,6 +57,7 @@ function toPublic(row: ChallengeRow): ChallengePublic {
     theme: row.theme as Theme,
     mapSize: row.mapSize as MapSize,
     difficulty: row.difficulty as Difficulty,
+    decoyTrickiness: row.decoyTrickiness,
     creatorName: row.creatorName,
     title: row.title,
     createdAt: row.createdAt,
@@ -70,7 +71,7 @@ function publicHost(req: Request): string {
 
 // POST /api/challenges — create a challenge.
 challengesRouter.post('/', (req: Request, res: Response) => {
-  const { seed, theme, mapSize, difficulty, walterX, walterY, creatorName, title } = req.body ?? {};
+  const { seed, theme, mapSize, difficulty, decoyTrickiness, walterX, walterY, creatorName, title } = req.body ?? {};
 
   if (
     typeof seed !== 'string' || !seed ||
@@ -82,13 +83,20 @@ challengesRouter.post('/', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid challenge payload' });
   }
 
+  // Trickiness is optional; clamp to [0,1] and default to 0.5.
+  const trickiness =
+    typeof decoyTrickiness === 'number' && Number.isFinite(decoyTrickiness)
+      ? Math.max(0, Math.min(1, decoyTrickiness))
+      : 0.5;
+
   const id = nanoid(10);
   const createdAt = Date.now();
   db.prepare(
-    `INSERT INTO challenges (id, seed, theme, mapSize, difficulty, walterX, walterY, creatorName, title, createdAt)
-     VALUES (@id, @seed, @theme, @mapSize, @difficulty, @walterX, @walterY, @creatorName, @title, @createdAt)`
+    `INSERT INTO challenges (id, seed, theme, mapSize, difficulty, decoyTrickiness, walterX, walterY, creatorName, title, createdAt)
+     VALUES (@id, @seed, @theme, @mapSize, @difficulty, @decoyTrickiness, @walterX, @walterY, @creatorName, @title, @createdAt)`
   ).run({
     id, seed, theme, mapSize, difficulty,
+    decoyTrickiness: trickiness,
     walterX, walterY,
     creatorName: creatorName.trim().slice(0, 40),
     title: title.trim().slice(0, 80),

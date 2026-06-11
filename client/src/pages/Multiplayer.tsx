@@ -251,7 +251,7 @@ function Lobby({ room, you, isHost, socket, toast, onLeave }: { room: RoomState;
 function GameBoard({ room, you, game, claims, lockedUntil, toast, isHost, socket, onLeave }: {
   room: RoomState; you: string; game: GameStartPayload | null; claims: Record<number, { color: string; playerId: string }>; lockedUntil: number; toast: string | null; isHost: boolean; socket: ReturnType<typeof getSocket>; onLeave: () => void;
 }) {
-  const settings: MapSettings | null = game ? { seed: game.seed, theme: game.settings.theme, mapSize: game.settings.mapSize, difficulty: 'normal' } : null;
+  const settings: MapSettings | null = game ? { seed: game.seed, theme: game.settings.theme, mapSize: game.settings.mapSize, difficulty: 'normal', decoyTrickiness: 0.5 } : null;
   const scene = useMemo(() => (settings ? generateScene(settings) : null), [settings]);
   const remaining = useCountdownTo(game?.endsAt ?? null);
   const [now, setNow] = useState(Date.now());
