@@ -1,4 +1,18 @@
-# Where's Walter? 🟢🧣
+<div align="center">
+  <img src="client/public/favicon.svg" alt="Where's Walter? logo" width="140" />
+  <h1>Where's Walter? 🟢🧣</h1>
+  <p><b>A procedurally generated hidden-object game — find Walter, mid-wave, in a crowd of hundreds.</b><br/>Play solo on endless fresh maps, create and share custom challenges, or race friends in real-time multiplayer.</p>
+  <p>
+    <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
+    <img alt="React" src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB">
+    <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white">
+    <img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-010101?logo=socketdotio&logoColor=white">
+    <img alt="Express" src="https://img.shields.io/badge/Express-000000?logo=express&logoColor=white">
+    <img alt="SQLite" src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white">
+  </p>
+</div>
+
+---
 
 A procedurally generated **hidden-object game**. Find **Walter** — a yellow-and-blue
 striped sweater, a green pompom beanie, brown round glasses, charcoal trousers and white
@@ -259,3 +273,12 @@ requirement as far as is meaningful:
 - No automated **browser/E2E** tests; the engine has unit tests and the REST + Socket.IO
   flows were verified end-to-end manually during development.
 ```
+
+## License
+
+Released under the [MIT License](LICENSE) © 2026 Olivier Lüthy. You're free to use, modify and distribute this
+software, including commercially, as long as the copyright notice and license are included.
+
+## Author
+
+Built by **Olivier Lüthy** — [GitHub](https://github.com/olivierluethy).
